@@ -7,12 +7,10 @@
 
 #include <FF_Sim7000.h>
 #include <FF_Trace.h>
+#include <time.h>
+#include <mktime.h>
 #ifdef ESP8266
-    #include <getLocalTime.h>
-#endif
-#ifdef ESP32
-    #include <time.h>
-    #include <mktime.h>
+    #include <NtpClientLib.h>
 #endif
 
 #include <pdulib.h>                                                 // https://github.com/mgaman/PDUlib
@@ -339,27 +337,22 @@ void FF_Sim7000::doLoop(void) {
                                 // Still ok?
                                 if (scanOk) {
                                     // Set time
-                                    #ifdef ESP8266
-                                        setTime()
-                                    #endif
-                                    #ifdef ESP32
-                                        uint32_t unixTime = (long) unixTimeInSeconds(values[TM_SEC], values[TM_MIN], values[TM_HOUR], values[TM_DAY], values[TM_MONTH], values[TM_YEAR] + 2000);
-                                        timeval epoch = {(long) unixTime, 0};
-                                        if (debugFlag) {
-                                            tm timeinfo;
-                                            getLocalTime(&timeinfo, 250);
-                                            char dateBefore[25];
-                                            strftime(dateBefore, sizeof(dateBefore), "%Y/%m/%d %H:%M:%S", &timeinfo);
-                                            settimeofday((const timeval*)&epoch, 0);
-                                            getLocalTime(&timeinfo, 250);
-                                            char dateAfter[25];
-                                            strftime(dateAfter, sizeof(dateAfter), "%Y/%m/%d %H:%M:%S", &timeinfo);
-                                            trace_debug_P("Date changed from %s to %s", dateBefore, dateAfter);
+									uint32_t unixTime = (long) unixTimeInSeconds(values[TM_SEC], values[TM_MIN], values[TM_HOUR], values[TM_DAY], values[TM_MONTH], values[TM_YEAR] + 2000);
+									timeval epoch = {(long) unixTime, 0};
+									if (debugFlag) {
+										tm timeinfo;
+										getLocalTime(&timeinfo, 250);
+										char dateBefore[25];
+										strftime(dateBefore, sizeof(dateBefore), "%Y/%m/%d %H:%M:%S", &timeinfo);
+										settimeofday((const timeval*)&epoch, 0);
+										getLocalTime(&timeinfo, 250);
+										char dateAfter[25];
+										strftime(dateAfter, sizeof(dateAfter), "%Y/%m/%d %H:%M:%S", &timeinfo);
+										trace_debug_P("Date changed from %s to %s", dateBefore, dateAfter);
 
-                                        } else {
-                                            settimeofday((const timeval*)&epoch, 0);
-                                        }
-                                    #endif
+									} else {
+										settimeofday((const timeval*)&epoch, 0);
+									}
                                     resetLastAnswer();
                                     return;
                                 }
@@ -962,8 +955,13 @@ void FF_Sim7000::openModem(long baudRate) {
                 Sim7000Serial.swap();
             #endif
         #else
-            if (debugFlag) trace_debug_P("Opening modem at %d bds, rx=%d, tx=%d", baudRate, modemRxPin, modemTxPin);
-            Sim7000Serial.begin(baudRate, SERIAL_8N1, modemRxPin, modemTxPin);
+            #ifdef ESP32
+                if (debugFlag) trace_debug_P("Opening modem at %d bds, rx=%d, tx=%d", baudRate, modemRxPin, modemTxPin);
+                Sim7000Serial.begin(baudRate, SERIAL_8N1, modemRxPin, modemTxPin);
+            #endif
+            #ifdef ESP8266
+                #error ESP8266 can only use Serial and SoftwareSerial, not SERIAL1 or Serial2!
+            #endif
         #endif
     #endif
     // Flush pending input chars

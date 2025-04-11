@@ -16,7 +16,7 @@
 // Constants
 #define SIM7000_CMD_TIMEOUT 4000                                    //!< Standard AT command timeout (ms)
 #define MAX_SMS_NUMBER_LEN 20                                       //!< SMS number max length
-#define MAX_ANSWER 500                                              //!< AT command answer max length
+#define MAX_ANSWER 250                                              //!< AT command answer max length
 #define DEFAULT_ANSWER "OK"                                         //!< AT command default answer
 #define CREG_MSG "+CREG: "                                          //!< CREG unsolicited message
 #define CREG_QUERY "+CREG?"                                         //!< CREG request
