@@ -38,11 +38,11 @@ struct initStepsStruct initSteps[STEP_SIZE] = {
     {nullptr,               "AT+CNMP=51" ,           "",             SIM7000_CMD_TIMEOUT, 0}, // Prefered network mode = auto (2)
     {nullptr,               "AT+CREG=2",            "",             SIM7000_CMD_TIMEOUT, 0}, // Verbose register network
     {nullptr,               "AT+CSDH=1",            "",             SIM7000_CMD_TIMEOUT, 0}, // Show SMS headers
-    {nullptr,               "AT+CMGD=1,4",          "",             10000,               0}, // Delete all pending messages
+    {nullptr,               "AT+CMGD=1,4",          "",             15000,               0}, // Delete all pending messages
     {nullptr,               "AT+CNMI=2,2,0,2,0",    "",             SIM7000_CMD_TIMEOUT, 0}, // New messages indication
     {nullptr,               "AT+CREG?",             "",             SIM7000_CMD_TIMEOUT, 0}, // Ask for network register status
     {nullptr,               "AT+CLTS=1",            "",             SIM7000_CMD_TIMEOUT, 0}, // Ask for local time
-    {nullptr,               "AT+CSCA?",             CSCA_INDICATOR, 10000,               0}, // Ask for CSA number
+    {nullptr,               "AT+CSCA?",             CSCA_INDICATOR, 15000,               0}, // Ask for CSA number
     {&FF_Sim7000::gotSca,   "",                     "",             SIM7000_CMD_TIMEOUT, 0}, // We got SCA number, save it for PDU
 };
 
@@ -683,7 +683,7 @@ void FF_Sim7000::sendOneSmsChunk(const char* number, const char* text, const uns
     gsmIdle = SIM7000_SEND;
     smsSentCount++;
     snprintf_P(tempBuffer, sizeof(tempBuffer),PSTR("AT+CMGS=%d"), len);
-    sendCommand(tempBuffer, &FF_Sim7000::sendSMStext, ">", 10000);
+    sendCommand(tempBuffer, &FF_Sim7000::sendSMStext, ">", 15000);
 }
 
 /*!
