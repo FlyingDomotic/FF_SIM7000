@@ -13,6 +13,10 @@
 
 #include <Arduino.h>
 
+#if !defined(USE_GSM) && !defined(USE_GPRS) && !defined(USE_LTE)
+    #error "You must at least defined one of USE_GSM, USE_GPRS or USE_LTE"
+#endif
+
 // Constants
 #define SIM7000_CMD_TIMEOUT 4000                                    //!< Standard AT command timeout (ms)
 #define MAX_SMS_NUMBER_LEN 20                                       //!< SMS number max length
@@ -20,6 +24,10 @@
 #define DEFAULT_ANSWER "OK"                                         //!< AT command default answer
 #define CREG_MSG "+CREG: "                                          //!< CREG unsolicited message
 #define CREG_QUERY "+CREG?"                                         //!< CREG request
+#define CGREG_MSG "+CGREG: "                                        //!< CGREG unsolicited message
+#define CGREG_QUERY "+CGREG?"                                       //!< CGREG request
+#define CEREG_MSG "+CEREG: "                                        //!< CEREG unsolicited message
+#define CEREG_QUERY "+CEREG?"                                       //!< CEREG request
 #define SMS_INDICATOR "+CMT: "                                      //!< SMS received indicator
 #define CSCA_INDICATOR "+CSCA:"                                     //!< SCA value indicator
 #define GSM_TIME "*PSUTTZ: "                                        //!< GSM network time

@@ -28,7 +28,22 @@ uint8_t stepRepeatCount;                                            // Count of 
 uint8_t stepMaxRepeatcount;                                         // Max repeat count for this command
 
 // Table containing init modem data (next step to run, data to send, data to wait for, timeout, repeat count)
-#define STEP_SIZE 14
+#ifdef USE_GSM
+    #define ADD_GSM_LINES 2
+#else
+    #define ADD_GSM_LINES 0
+#endif
+#ifdef USE_GPRS
+    #define ADD_GPRS_LINES 2
+#else
+    #define ADD_GPRS_LINES 0
+#endif
+#ifdef USE_LTE
+    #define ADD_LTE_LINES 2
+#else
+    #define ADD_LTE_LINES 0
+#endif
+#define STEP_SIZE 12 + ADD_GSM_LINES + ADD_GPRS_LINES + ADD_LTE_LINES
 struct initStepsStruct initSteps[STEP_SIZE] = {
     {nullptr,               "AT",                   "",             1000,                9}, // Begin, send AT (up to 10 times, 1s interval)
     {nullptr,               "AT+IPR=115200",        "",             SIM7000_CMD_TIMEOUT, 0}, // Modem comm speed is 115200
@@ -36,11 +51,27 @@ struct initStepsStruct initSteps[STEP_SIZE] = {
     {nullptr,               "AT+CMEE=2",            "",             SIM7000_CMD_TIMEOUT, 0}, // Return detailled error messages
     {nullptr,               "AT+CMGF=0",            "",             SIM7000_CMD_TIMEOUT, 0}, // Set SMS mode = PDU (0)
     {nullptr,               "AT+CNMP=51" ,           "",             SIM7000_CMD_TIMEOUT, 0}, // Prefered network mode = auto (2)
+#ifdef USE_GSM
     {nullptr,               "AT+CREG=2",            "",             SIM7000_CMD_TIMEOUT, 0}, // Verbose register network
+#endif
+#ifdef USE_GPRS
+    {nullptr,               "AT+CGREG=2",           "",             SIM7000_CMD_TIMEOUT, 0}, // Verbose register network
+#endif
+#ifdef USE_LTE
+    {nullptr,               "AT+CEREG=2",           "",             SIM7000_CMD_TIMEOUT, 0}, // Verbose register network
+#endif
     {nullptr,               "AT+CSDH=1",            "",             SIM7000_CMD_TIMEOUT, 0}, // Show SMS headers
     {nullptr,               "AT+CMGD=1,4",          "",             15000,               0}, // Delete all pending messages
     {nullptr,               "AT+CNMI=2,2,0,2,0",    "",             SIM7000_CMD_TIMEOUT, 0}, // New messages indication
+#ifdef USE_GSM
     {nullptr,               "AT+CREG?",             "",             SIM7000_CMD_TIMEOUT, 0}, // Ask for network register status
+#endif
+#ifdef USE_GPRS
+    {nullptr,               "AT+CGREG?",            "",             SIM7000_CMD_TIMEOUT, 0}, // Ask for network register status
+#endif
+#ifdef USE_LTE
+    {nullptr,               "AT+CEREG?",            "",             SIM7000_CMD_TIMEOUT, 0}, // Ask for network register status
+#endif
     {nullptr,               "AT+CLTS=1",            "",             SIM7000_CMD_TIMEOUT, 0}, // Ask for local time
     {nullptr,               "AT+CSCA?",             CSCA_INDICATOR, 15000,               0}, // Ask for CSA number
     {&FF_Sim7000::gotSca,   "",                     "",             SIM7000_CMD_TIMEOUT, 0}, // We got SCA number, save it for PDU
@@ -246,24 +277,66 @@ void FF_Sim7000::doLoop(void) {
                         #ifdef FF_SIM7000_DUMP_MESSAGE_ON_SERIAL
                             Serial.print("<LF>");
                         #endif
-                        // Do we have an "CREG" message or answer?
-                        char *ptrStr = strstr(lastAnswer, CREG_MSG);
-                        if (ptrStr) {
-                            // Do we just sent a CREG request?
-                            if (strstr(lastCommand, CREG_QUERY)) {
-                                // We asked for CREG, there's a single char plus a comma to skip
-                                ptrStr += sizeof(CREG_MSG)+1;
-                            } else {
-                                // This is an unsolicited CREG, skip only message length (except ending \0)
-                                ptrStr += sizeof(CREG_MSG)-1;
+                        #ifdef USE_GSM
+                            // Do we have an "CREG" message or answer?
+                            char *ptrStr = strstr(lastAnswer, CREG_MSG);
+                            if (ptrStr) {
+                                // Do we just sent a CREG request?
+                                if (strstr(lastCommand, CREG_QUERY)) {
+                                    // We asked for CREG, there's a single char plus a comma to skip
+                                    ptrStr += sizeof(CREG_MSG)+1;
+                                } else {
+                                    // This is an unsolicited CREG, skip only message length (except ending \0)
+                                    ptrStr += sizeof(CREG_MSG)-1;
+                                }
+                                // Extract number after CREG_MSG
+                                char result = ptrStr[0];
+                                if (debugFlag) trace_debug_P("Got %s, state: %c", lastAnswer, result);
+                                smsReady = (result == '1' || result == '5');
+                                resetLastAnswer();
+                                return;
                             }
-                            // Extract number after CREG_MSG
-                            char result = ptrStr[0];
-                            if (debugFlag) trace_debug_P("Got %s, state: %c", lastAnswer, result);
-                            smsReady = (result == '1' || result == '5');
-                            resetLastAnswer();
-                            return;
-                        }
+                        #endif
+                        #ifdef USE_GPRS
+                            // Do we have an "CGREG" message or answer?
+                            char *ptrStr = strstr(lastAnswer, CGREG_MSG);
+                            if (ptrStr) {
+                                // Do we just sent a CREG request?
+                                if (strstr(lastCommand, CGREG_QUERY)) {
+                                    // We asked for CGREG, there's a single char plus a comma to skip
+                                    ptrStr += sizeof(CGREG_MSG)+1;
+                                } else {
+                                    // This is an unsolicited CREG, skip only message length (except ending \0)
+                                    ptrStr += sizeof(CGREG_MSG)-1;
+                                }
+                                // Extract number after CREG_MSG
+                                char result = ptrStr[0];
+                                if (debugFlag) trace_debug_P("Got %s, state: %c", lastAnswer, result);
+                                smsReady = (result == '1' || result == '5');
+                                resetLastAnswer();
+                                return;
+                            }
+                        #endif
+                        #ifdef USE_LTE
+                            // Do we have an "CREG" message or answer?
+                            char *ptrStr = strstr(lastAnswer, CEREG_MSG);
+                            if (ptrStr) {
+                                // Do we just sent a CREG request?
+                                if (strstr(lastCommand, CEREG_QUERY)) {
+                                    // We asked for CEREG, there's a single char plus a comma to skip
+                                    ptrStr += sizeof(CEREG_MSG)+1;
+                                } else {
+                                    // This is an unsolicited CEREG, skip only message length (except ending \0)
+                                    ptrStr += sizeof(CEREG_MSG)-1;
+                                }
+                                // Extract number after CEREG_MSG
+                                char result = ptrStr[0];
+                                if (debugFlag) trace_debug_P("Got %s, state: %c", lastAnswer, result);
+                                smsReady = (result == '1' || result == '5');
+                                resetLastAnswer();
+                                return;
+                            }
+                        #endif
                         // Do we have a time message?
                         #ifdef FF_SIM6000_SET_TIME_FROM_GSM_NETWORK
                         ptrStr = strstr(lastAnswer, GSM_TIME);
