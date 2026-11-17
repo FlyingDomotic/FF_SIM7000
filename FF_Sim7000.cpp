@@ -277,9 +277,10 @@ void FF_Sim7000::doLoop(void) {
                         #ifdef FF_SIM7000_DUMP_MESSAGE_ON_SERIAL
                             Serial.print("<LF>");
                         #endif
+                        char *ptrStr;
                         #ifdef USE_GSM
                             // Do we have an "CREG" message or answer?
-                            char *ptrStr = strstr(lastAnswer, CREG_MSG);
+                            ptrStr = strstr(lastAnswer, CREG_MSG);
                             if (ptrStr) {
                                 // Do we just sent a CREG request?
                                 if (strstr(lastCommand, CREG_QUERY)) {
@@ -299,7 +300,7 @@ void FF_Sim7000::doLoop(void) {
                         #endif
                         #ifdef USE_GPRS
                             // Do we have an "CGREG" message or answer?
-                            char *ptrStr = strstr(lastAnswer, CGREG_MSG);
+                            ptrStr = strstr(lastAnswer, CGREG_MSG);
                             if (ptrStr) {
                                 // Do we just sent a CREG request?
                                 if (strstr(lastCommand, CGREG_QUERY)) {
@@ -319,7 +320,7 @@ void FF_Sim7000::doLoop(void) {
                         #endif
                         #ifdef USE_LTE
                             // Do we have an "CREG" message or answer?
-                            char *ptrStr = strstr(lastAnswer, CEREG_MSG);
+                            ptrStr = strstr(lastAnswer, CEREG_MSG);
                             if (ptrStr) {
                                 // Do we just sent a CREG request?
                                 if (strstr(lastCommand, CEREG_QUERY)) {
